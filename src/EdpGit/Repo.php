@@ -24,7 +24,7 @@ class Repo
      * @param Git\Parser $parser 
      * @return void
      */
-    public function construct($parser, $cache = false)
+    public function __construct($parser, $cache = false)
     {
         $this->setParser($parser);
         $this->setCache($cache);

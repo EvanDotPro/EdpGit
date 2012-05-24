@@ -30,7 +30,7 @@ class Parser
      * @param string $projectPath 
      * @return void
      */
-    public function construct($projectPath)
+    public function __construct($projectPath)
     {
         $this->setProjectPath($projectPath);
     }
