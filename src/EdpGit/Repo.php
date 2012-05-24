@@ -27,7 +27,6 @@ class Repo
     public function __construct($parser, $cache = false)
     {
         $this->setParser($parser);
-        $this->setCache($cache);
     }
 
     /**
@@ -106,10 +105,42 @@ class Repo
         return $this->commitsByBranch;
     }
 
+    public function getBranchCommits($branch)
+    {
+        $commits = explode("\n", $this->getParser()->run('rev-list ^master ' . $branch));
+        $firstCommit = array_shift($commits);
+        $lastCommit = array_pop($commits);
+
+        $commits = $this->getParser()->run('log --pretty=format:\'</files>%n</commit>%n<commit>%n<json>%n{%n  "commit": "%H",%n  "tree": "%T",%n  "parent": "%P",%n  "author": {%n    "name": "%aN",%n    "email": "%aE",%n    "date": "%ai"%n  },%n  "committer": {%n    "name": "%cN",%n    "email": "%cE",%n    "date": "%ci"%n  }%n}%n</json>%n<message><![CDATA[%B]]></message>%n<files>\' --numstat ' . $firstCommit . '...' . $lastCommit);
+        $return = array();
+        $commits = simplexml_load_string('<commits>'.substr($commits,18).'</files></commit></commits>');
+        foreach ($commits->commit as $log) {
+            $details = json_decode($log->json);
+            $hash = (string)$details->commit;
+            if (!$this->getCommit($hash)) { 
+                $commit = new Commit;
+                $commit->setHash($hash);
+                $commit->setTree((string)$details->tree);
+                $commit->setParents(explode(' ', $details->parent));
+                $commit->setAuthorName((string)$details->author->name);
+                $commit->setAuthorEmail((string)$details->author->email);
+                $commit->setAuthorTime((string)$details->author->date);
+                $commit->setCommitterName((string)$details->committer->name);
+                $commit->setCommitterEmail((string)$details->committer->email);
+                $commit->setCommitterTime((string)$details->committer->date);
+                $commit->setMessage((string)$log->message);
+                $commit->setFiles($this->parseFiles((string)$log->files));
+                $return[] = $commit;
+                $this->setCommit($commit->getHash(), $commit);
+            }
+        }
+        return $return;
+    }
+
     protected function parseFiles($files)
     {
         $pattern = '/\s*(?P<insertions>\d+)\s(?P<deletions>\d+)\s+(?P<file>[^\s]+)/';
-        pregmatchall($pattern, $files, $matches, PREGSETORDER);
+        preg_match_all($pattern, $files, $matches, PREG_SET_ORDER);
         return $matches;
     }
 

@@ -1,5 +1,5 @@
 <?php
-namespace Git;
+namespace EdpGit;
 use DateTime;
 class Commit
 {
