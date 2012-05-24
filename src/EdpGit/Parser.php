@@ -25,6 +25,13 @@ class Parser
     protected $projectPath;
 
     /**
+     * workTree 
+     * 
+     * @var string
+     */
+    protected $workTree;
+
+    /**
      * construct 
      * 
      * @param string $projectPath 
@@ -45,7 +52,7 @@ class Parser
     public function run($command, $projectPath = false)
     {
         $projectPath = $projectPath ?: $this->getProjectPath();
-        $cmd = $this->getGitPath() . ' --git-dir=' . escapeshellarg($projectPath) . ' ' . $command;
+        $cmd = $this->getGitPath() . ' --git-dir=' . escapeshellarg($projectPath) . ' --work-tree=' . escapeshellarg($this->workTree) . ' ' .$command;
         $output = `$cmd`;
         return trim($output);
     }
@@ -96,6 +103,7 @@ class Parser
             throw new Exception('Given path not a valid git repository: '.$realProjectPath);
         }
         $this->projectPath = $realProjectPath;
+        $this->workTree = realpath($projectPath);
         return $this;
     }
 
